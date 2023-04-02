@@ -54,6 +54,7 @@ func Decode(msg, key string) (string, error) {
 }
 
 func Crack(msg string) (string, error) {
-	_ = kasiski.GetPossibleKeyLengths(msg)
+	possibleKeyLengths := kasiski.GetPossibleKeyLengths(msg)
+	fmt.Println("key lengths=", possibleKeyLengths)
 	return "", nil
 }
