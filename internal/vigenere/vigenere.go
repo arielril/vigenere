@@ -8,6 +8,8 @@ import (
 	"github.com/projectdiscovery/gologger"
 )
 
+const possibleLetters = "abcdefghijklmnopqrstuvwxyz"
+
 // Encode encodes a msg with a key using the vigenere cipher
 func Encode(msg, key string) (string, error) {
 	// encryption formula
@@ -55,6 +57,25 @@ func Decode(msg, key string) (string, error) {
 
 func Crack(msg string) (string, error) {
 	possibleKeyLengths := kasiski.GetPossibleKeyLengths(msg)
-	fmt.Println("key lengths=", possibleKeyLengths)
+	gologger.Debug().Msgf("kasiski possible key lengths= %v\n", possibleKeyLengths)
+
+	for _, keyLength := range possibleKeyLengths {
+		for i := 1; i <= keyLength; i++ {
+			nthSubKeyLetters := kasiski.GetNthSubKeyLetters(i, keyLength, msg)
+			fmt.Println("got nth subkey letters=", nthSubKeyLetters)
+
+			for _, letter := range possibleLetters {
+				decryptedText, err := Decode(msg, string(letter))
+				if err != nil {
+					gologger.Warning().Msgf("could not decrypt message: %s\n", err)
+				}
+				fmt.Println("decrypted text=", decryptedText)
+			}
+		}
+
+		crackedMessage := ""
+		fmt.Println("cracked message=", crackedMessage)
+	}
+
 	return "", nil
 }
