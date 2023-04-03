@@ -13,9 +13,9 @@ const (
 	maxKeySize        = 16
 )
 
-// GetPossibleKeyLengths returns the most probable
-// key lengths
-func GetPossibleKeyLengths(msg string) []int {
+// KasiskiExamination returns the most probable
+// key lengths. Kasiski examination
+func KasiskiExamination(msg string) []int {
 	// get all possible repetitions with size 1 to 10
 	repeatedSequencesMap := getPossibleRepetitions(msg)
 
@@ -45,10 +45,11 @@ func getPossibleRepetitions(msg string) map[string][]int {
 
 	for seqSize := minRepetitionSize; seqSize <= maxRepetitionSize; seqSize++ {
 		for seqStart := 0; seqStart <= len(msg)-seqSize; seqStart++ {
+
 			seq := msg[seqStart : seqStart+seqSize]
 			gologger.Debug().Msgf("seq= %s\n", seq)
 
-			for i := 0; i < len(msg)-seqSize; i++ {
+			for i := seqStart + seqSize; i < len(msg)-seqSize; i++ {
 				if msg[i:i+seqSize] == seq {
 					if sequenceMapping[seq] == nil {
 						sequenceMapping[seq] = make([]int, 0)

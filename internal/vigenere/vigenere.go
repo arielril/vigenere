@@ -8,8 +8,6 @@ import (
 	"github.com/projectdiscovery/gologger"
 )
 
-const possibleLetters = "abcdefghijklmnopqrstuvwxyz"
-
 // Encode encodes a msg with a key using the vigenere cipher
 func Encode(msg, key string) (string, error) {
 	// encryption formula
@@ -56,22 +54,40 @@ func Decode(msg, key string) (string, error) {
 }
 
 func Crack(msg string) (string, error) {
-	possibleKeyLengths := kasiski.GetPossibleKeyLengths(msg)
-	gologger.Debug().Msgf("kasiski possible key lengths= %v\n", possibleKeyLengths)
+	possibleKeyLengths := kasiski.KasiskiExamination(msg)
+	gologger.Info().Msgf("kasiski most possible key lengths= %v\n", possibleKeyLengths)
 
 	for _, keyLength := range possibleKeyLengths {
-		for i := 1; i <= keyLength; i++ {
-			nthSubKeyLetters := kasiski.GetNthSubKeyLetters(i, keyLength, msg)
-			fmt.Println("got nth subkey letters=", nthSubKeyLetters)
+		gologger.Info().Msgf("attempting to crack with key length %v...\n", keyLength)
 
-			for _, letter := range possibleLetters {
-				decryptedText, err := Decode(msg, string(letter))
-				if err != nil {
-					gologger.Warning().Msgf("could not decrypt message: %s\n", err)
-				}
-				fmt.Println("decrypted text=", decryptedText)
-			}
-		}
+		crackWithKeyLength(msg, keyLength)
+
+		// for i := 1; i <= keyLength; i++ {
+		// 	nthSubKeyLetters := kasiski.GetNthSubKeyLetters(i, keyLength, msg)
+		// 	gologger.Debug().Msgf("got nth subkey letters= %v\n", nthSubKeyLetters)
+
+		// 	frequencyScores := make(pair.PairFrequencyScoreAndKeyList, 0)
+		// 	for _, possibleKey := range possibleLetters {
+		// 		decryptedText, err := Decode(nthSubKeyLetters, string(possibleKey))
+		// 		if err != nil {
+		// 			gologger.Warning().Msgf("could not decrypt message: %s\n", err)
+		// 		}
+
+		// 		frequencyScores = append(frequencyScores, pair.PairFrequencyScoreAndKey{
+		// 			Key:   string(possibleKey),
+		// 			Value: frequency.GetEnglishFrequencyScore(decryptedText),
+		// 		})
+		// 	}
+
+		// 	sort.Sort(frequencyScores)
+		// 	gologger.Debug().Msgf("frequency scores: %#v\n", frequencyScores)
+
+		// 	allFrequencyScores = append(allFrequencyScores, frequencyScores...)
+		// }
+
+		// for i := 0; i < len(allFrequencyScores); i++ {
+		// 	gologger.Info().Msgf("possible letters for letter %v of the key: %v\n", i, allFrequencyScores[i].Value)
+		// }
 
 		crackedMessage := ""
 		fmt.Println("cracked message=", crackedMessage)
