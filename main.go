@@ -16,7 +16,9 @@ type Options struct {
 	Crack     bool
 	CipherKey string
 	Message   string
-	Verbose   bool
+
+	Verbose bool
+	Silent  bool
 }
 
 var options *Options = &Options{}
@@ -30,7 +32,9 @@ func init() {
 	set.BoolVarP(&options.Crack, "crack", "c", false, "crack an encrypted message")
 	set.StringVarP(&options.CipherKey, "key", "k", "", "cipher key")
 	set.StringVarP(&options.Message, "message", "m", "", "message or encrypted message")
+
 	set.BoolVarP(&options.Verbose, "verbose", "v", false, "verbose output")
+	set.BoolVarP(&options.Silent, "silent", "s", false, "silent output")
 
 	if err := set.Parse(); err != nil {
 		gologger.Fatal().Msgf("could not parse program flags: %s\n", err)
@@ -86,7 +90,15 @@ func validateOptions(opts *Options) error {
 }
 
 func configureOutput(opts *Options) {
+	if opts.Verbose && opts.Silent {
+		gologger.Fatal().Msg("silent and verbose output can not set at the same time")
+	}
+
 	if opts.Verbose {
 		gologger.DefaultLogger.SetMaxLevel(levels.LevelDebug)
+	}
+
+	if opts.Silent {
+		gologger.DefaultLogger.SetMaxLevel(levels.LevelSilent)
 	}
 }

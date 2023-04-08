@@ -1,7 +1,6 @@
 package frequency
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/arielril/vigenere/pair"
@@ -63,13 +62,13 @@ func getFrequencyOrder(msg string) []string {
 	for _, v := range frequencyOrdered {
 		frequencyAndKeyString[v.Key] = string(v.Value)
 	}
-	fmt.Println("frequencyAndKeyString=", frequencyAndKeyString)
+	// fmt.Println("frequencyAndKeyString=", frequencyAndKeyString)
 
 	frequencyLetters := make([]string, 0)
 	for _, v := range frequencyAndKeyString {
 		frequencyLetters = append(frequencyLetters, v)
 	}
-	fmt.Println("frequencyLetters=", frequencyLetters)
+	// fmt.Println("frequencyLetters=", frequencyLetters)
 
 	return frequencyLetters
 }
