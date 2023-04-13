@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"strings"
 
 	"github.com/arielril/vigenere/internal/vigenere"
@@ -11,11 +12,12 @@ import (
 )
 
 type Options struct {
-	Encode    bool
-	Decode    bool
-	Crack     bool
-	CipherKey string
-	Message   string
+	Encode      bool
+	Decode      bool
+	Crack       bool
+	CipherKey   string
+	Message     string
+	MessagePath string
 
 	Verbose bool
 	Silent  bool
@@ -32,6 +34,7 @@ func init() {
 	set.BoolVarP(&options.Crack, "crack", "c", false, "crack an encrypted message")
 	set.StringVarP(&options.CipherKey, "key", "k", "", "cipher key")
 	set.StringVarP(&options.Message, "message", "m", "", "message or encrypted message")
+	set.StringVarP(&options.MessagePath, "message-path", "mp", "", "message path")
 
 	set.BoolVarP(&options.Verbose, "verbose", "v", false, "verbose output")
 	set.BoolVarP(&options.Silent, "silent", "s", false, "silent output")
@@ -50,10 +53,7 @@ func main() {
 		gologger.Fatal().Msgf("could not run vigenere: %s\n", err)
 	}
 
-	/* deal only with lower case */
-	options.Message = strings.ToLower(options.Message)
-	options.CipherKey = strings.ToLower(options.CipherKey)
-	/* deal only with lower case */
+	readMessage(options)
 
 	var vigenereResult string
 	switch {
@@ -74,6 +74,22 @@ func main() {
 	gologger.Silent().Msgf("Vigenere result: %s\n", vigenereResult)
 }
 
+func readMessage(opts *Options) {
+	if opts.MessagePath != "" {
+		data, err := ioutil.ReadFile(opts.MessagePath)
+		if err != nil {
+			gologger.Fatal().Msgf("could not read message file: %s\n", err)
+		}
+
+		opts.Message = string(data)
+	}
+
+	/* deal only with lower case */
+	opts.Message = strings.ToLower(opts.Message)
+	opts.CipherKey = strings.ToLower(opts.CipherKey)
+	/* deal only with lower case */
+}
+
 func validateOptions(opts *Options) error {
 	switch {
 	case !opts.Encode && !opts.Decode && !opts.Crack:
@@ -82,7 +98,7 @@ func validateOptions(opts *Options) error {
 		return errors.New("to encode a message you must provide a cipher key")
 	case opts.Decode && opts.CipherKey == "":
 		return errors.New("to decode a message you must provide a cipher key")
-	case opts.Message == "":
+	case opts.Message == "" && opts.MessagePath == "":
 		return errors.New("no message was provided")
 	}
 

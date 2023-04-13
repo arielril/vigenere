@@ -1,87 +1,76 @@
 package vigenere
 
-import (
-	"sort"
-	"strings"
+// func crackWithKeyLength(msg string, keyLength int) {
+// 	alphabetLetters := "abcdefghijklmnopqrstuvwxyz"
+// 	numOfLetterAttemptsPerSubkey := 4
 
-	"github.com/arielril/vigenere/internal/frequency"
-	"github.com/arielril/vigenere/internal/kasiski"
-	"github.com/arielril/vigenere/pair"
-	"github.com/projectdiscovery/gologger"
-	"github.com/zaataylor/cartesian/cartesian"
-)
+// 	allKeyAndFrequencyMatchList := make(pair.PairFrequencyScoreAndKeyList, 0)
 
-func crackWithKeyLength(msg string, keyLength int) {
-	alphabetLetters := "abcdefghijklmnopqrstuvwxyz"
-	numOfLetterAttemptsPerSubkey := 4
+// 	for nth := 1; nth <= keyLength+1; nth++ {
+// 		nthLetters := kasiski.GetNthSubKeyLetters(nth, keyLength, msg)
 
-	allKeyAndFrequencyMatchList := make(pair.PairFrequencyScoreAndKeyList, 0)
+// 		keyAndFrequencyMatchList := make(pair.PairFrequencyScoreAndKeyList, 0)
+// 		for _, possibleKey := range alphabetLetters {
+// 			decryptedText, err := Decode(nthLetters, string(possibleKey))
+// 			if err != nil {
+// 				gologger.Warning().Msgf("could not decrypt msg: %s\n", err)
+// 				continue
+// 			}
 
-	for nth := 1; nth <= keyLength+1; nth++ {
-		nthLetters := kasiski.GetNthSubKeyLetters(nth, keyLength, msg)
+// 			keyAndFrequencyMatchList = append(keyAndFrequencyMatchList, pair.PairFrequencyScoreAndKey{
+// 				Key:   string(possibleKey),
+// 				Value: frequency.GetEnglishFrequencyScore(decryptedText),
+// 			})
+// 		}
 
-		keyAndFrequencyMatchList := make(pair.PairFrequencyScoreAndKeyList, 0)
-		for _, possibleKey := range alphabetLetters {
-			decryptedText, err := Decode(nthLetters, string(possibleKey))
-			if err != nil {
-				gologger.Warning().Msgf("could not decrypt msg: %s\n", err)
-				continue
-			}
+// 		sort.Sort(sort.Reverse(keyAndFrequencyMatchList))
+// 		allKeyAndFrequencyMatchList = append(
+// 			allKeyAndFrequencyMatchList,
+// 			keyAndFrequencyMatchList[:numOfLetterAttemptsPerSubkey]...,
+// 		)
+// 	}
 
-			keyAndFrequencyMatchList = append(keyAndFrequencyMatchList, pair.PairFrequencyScoreAndKey{
-				Key:   string(possibleKey),
-				Value: frequency.GetEnglishFrequencyScore(decryptedText),
-			})
-		}
+// 	for _, freqAndMatch := range allKeyAndFrequencyMatchList {
+// 		gologger.Info().Msgf("possible letters for letter %v: %v\n", freqAndMatch.Key, freqAndMatch.Value)
+// 	}
 
-		sort.Sort(sort.Reverse(keyAndFrequencyMatchList))
-		allKeyAndFrequencyMatchList = append(
-			allKeyAndFrequencyMatchList,
-			keyAndFrequencyMatchList[:numOfLetterAttemptsPerSubkey]...,
-		)
-	}
+// 	everyCombinationOfLikelyLetters := cartesian.NewCartesianProduct(makeIntSlice(numOfLetterAttemptsPerSubkey, keyLength))
 
-	for _, freqAndMatch := range allKeyAndFrequencyMatchList {
-		gologger.Info().Msgf("possible letters for letter %v: %v\n", freqAndMatch.Key, freqAndMatch.Value)
-	}
+// 	// fmt.Println("allKeyAndFrequencyMatchList=", allKeyAndFrequencyMatchList)
+// 	// fmt.Println("everyCombinationOfLikelyLetters=", everyCombinationOfLikelyLetters)
+// 	for _, combination := range everyCombinationOfLikelyLetters.Values() {
+// 		possibleKey := strings.Builder{}
+// 		for i := 0; i < keyLength; i++ {
+// 			// fmt.Println("allfreqscore key rune=", allKeyAndFrequencyMatchList[i].Key)
+// 			// fmt.Println("possible key rune=", combination[i])
+// 			possibleKey.WriteString(allKeyAndFrequencyMatchList[combination[i].(int)].Key)
+// 		}
 
-	everyCombinationOfLikelyLetters := cartesian.NewCartesianProduct(makeIntSlice(numOfLetterAttemptsPerSubkey, keyLength))
+// 		// gologger.Silent().Msgf("attempting with key %s\n", possibleKey.String())
 
-	// fmt.Println("allKeyAndFrequencyMatchList=", allKeyAndFrequencyMatchList)
-	// fmt.Println("everyCombinationOfLikelyLetters=", everyCombinationOfLikelyLetters)
-	for _, combination := range everyCombinationOfLikelyLetters.Values() {
-		possibleKey := strings.Builder{}
-		for i := 0; i < keyLength; i++ {
-			// fmt.Println("allfreqscore key rune=", allKeyAndFrequencyMatchList[i].Key)
-			// fmt.Println("possible key rune=", combination[i])
-			possibleKey.WriteString(allKeyAndFrequencyMatchList[combination[i].(int)].Key)
-		}
+// 		decryptedText, err := Decode(msg, possibleKey.String())
+// 		if err != nil {
+// 			gologger.Error().Msgf("could not decode vigenere: %s\n", err)
+// 		}
+// 		// fmt.Println("decrypted text=", decryptedText)
 
-		// gologger.Silent().Msgf("attempting with key %s\n", possibleKey.String())
+// 		if frequency.DetectIfIsEnglish(decryptedText) {
+// 			gologger.Silent().Msgf("possible used key %s\n", possibleKey.String())
+// 			gologger.Silent().Msgf("decryption: %s\n", decryptedText)
+// 		}
+// 	}
+// }
 
-		decryptedText, err := Decode(msg, possibleKey.String())
-		if err != nil {
-			gologger.Error().Msgf("could not decode vigenere: %s\n", err)
-		}
-		// fmt.Println("decrypted text=", decryptedText)
+// func makeIntSlice(n, repeat int) []any {
+// 	r := make([]any, 0)
 
-		if frequency.DetectIfIsEnglish(decryptedText) {
-			gologger.Silent().Msgf("possible used key %s\n", possibleKey.String())
-			gologger.Silent().Msgf("decryption: %s\n", decryptedText)
-		}
-	}
-}
+// 	for i := 0; i < repeat; i++ {
+// 		a := make([]int, 0)
+// 		for j := 0; j < n; j++ {
+// 			a = append(a, j)
+// 		}
+// 		r = append(r, a)
+// 	}
 
-func makeIntSlice(n, repeat int) []any {
-	r := make([]any, 0)
-
-	for i := 0; i < repeat; i++ {
-		a := make([]int, 0)
-		for j := 0; j < n; j++ {
-			a = append(a, j)
-		}
-		r = append(r, a)
-	}
-
-	return r
-}
+// 	return r
+// }
