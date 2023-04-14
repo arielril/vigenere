@@ -85,8 +85,8 @@ func readMessage(opts *Options) {
 	}
 
 	/* deal only with lower case */
-	opts.Message = strings.ToLower(opts.Message)
-	opts.CipherKey = strings.ToLower(opts.CipherKey)
+	opts.Message = strings.TrimSpace(strings.ToLower(opts.Message))
+	opts.CipherKey = strings.TrimSpace(strings.ToLower(opts.CipherKey))
 	/* deal only with lower case */
 }
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/arielril/vigenere/internal/kasiski"
+	"github.com/arielril/vigenere/internal/frequency"
 	"github.com/projectdiscovery/gologger"
 )
 
@@ -42,10 +42,10 @@ func Decode(msg, key string) (string, error) {
 		kI := key[i%len(key)] - 'a'
 		dI := (eI - kI + 26) % 26
 
-		gologger.Debug().Msgf("E_i=%v\n", eI)
-		gologger.Debug().Msgf("K_i=%v\n", kI)
-		gologger.Debug().Msgf("D_i=%v\n", dI)
-		gologger.Debug().Msg("----------\n")
+		// gologger.Debug().Msgf("E_i=%v\n", eI)
+		// gologger.Debug().Msgf("K_i=%v\n", kI)
+		// gologger.Debug().Msgf("D_i=%v\n", dI)
+		// gologger.Debug().Msg("----------\n")
 
 		decipheredMessage[i] = fmt.Sprintf("%c", dI+'a')
 	}
@@ -56,56 +56,91 @@ func Decode(msg, key string) (string, error) {
 func Crack(msg string) (string, error) {
 	gologger.Silent().Msgf("message length: %d\n", len(msg))
 
-	possibleKeyLength := kasiski.GetPossibleKeyLength(msg)
-	gologger.Silent().Msgf("possible key length: %d\n", possibleKeyLength)
-
-	possibleKey := kasiski.GetPossibleKey(possibleKeyLength, msg)
-	gologger.Silent().Msgf("possible key: %s\n", possibleKey)
-
-	decodedMsg, err := Decode(msg, possibleKey)
-	if err != nil {
-		gologger.Fatal().Msgf("could not decode msg with possible key: %s\n", err)
+	m := make([]int, len(msg))
+	for i := 0; i < len(msg); i++ {
+		m[i] = int(msg[i] - 'a')
 	}
 
-	return decodedMsg, nil
+	bestFit := 1e100
+	bestKey := ""
 
-	// possibleKeyLengths := kasiski.KasiskiExamination(msg)
-	// gologger.Info().Msgf("kasiski most possible key lengths= %v\n", possibleKeyLengths)
+	for i := 1; i <= 26; i++ {
 
-	// for _, keyLength := range possibleKeyLengths {
-	// 	gologger.Info().Msgf("attempting to crack with key length %v...\n", keyLength)
+		key := make([]byte, i)
 
-	// 	crackWithKeyLength(msg, keyLength)
+		fit := getFrequencyEveryNthPartition(m, key)
 
-	// for i := 1; i <= keyLength; i++ {
-	// 	nthSubKeyLetters := kasiski.GetNthSubKeyLetters(i, keyLength, msg)
-	// 	gologger.Debug().Msgf("got nth subkey letters= %v\n", nthSubKeyLetters)
+		if fit < bestFit {
+			bestFit = fit
+			bestKey = string(key)
+			gologger.Debug().Msgf("best key so far: %s\n", bestKey)
+		}
+	}
 
-	// 	frequencyScores := make(pair.PairFrequencyScoreAndKeyList, 0)
-	// 	for _, possibleKey := range possibleLetters {
-	// 		decryptedText, err := Decode(nthSubKeyLetters, string(possibleKey))
-	// 		if err != nil {
-	// 			gologger.Warning().Msgf("could not decrypt message: %s\n", err)
-	// 		}
+	gologger.Silent().Msgf("found key: %s\n", bestKey)
 
-	// 		frequencyScores = append(frequencyScores, pair.PairFrequencyScoreAndKey{
-	// 			Key:   string(possibleKey),
-	// 			Value: frequency.GetEnglishFrequencyScore(decryptedText),
-	// 		})
-	// 	}
+	decodedMessage, err := Decode(msg, bestKey)
+	return decodedMessage, err
+}
 
-	// 	sort.Sort(frequencyScores)
-	// 	gologger.Debug().Msgf("frequency scores: %#v\n", frequencyScores)
+func sumSlice(a []float64) (sum float64) {
+	for _, f := range a {
+		sum += f
+	}
+	return
+}
 
-	// 	allFrequencyScores = append(allFrequencyScores, frequencyScores...)
-	// }
+func getKeyFrequency(a []float64) int {
+	sum := sumSlice(a)
+	bestFit := 1e100
+	bestFrequency := 0
 
-	// for i := 0; i < len(allFrequencyScores); i++ {
-	// 	gologger.Info().Msgf("possible letters for letter %v of the key: %v\n", i, allFrequencyScores[i].Value)
-	// }
+	for rotate := 0; rotate < 26; rotate++ {
+		fit := 0.0
+		for i := 0; i < 26; i++ {
+			d := a[(i+rotate)%26]/sum - frequency.EnglishLetterFrequency[i]
+			fit += d * d / frequency.EnglishLetterFrequency[i]
+		}
 
-	// 	crackedMessage := ""
-	// 	fmt.Println("cracked message=", crackedMessage)
-	// }
+		if fit < bestFit {
+			bestFit = fit
+			bestFrequency = rotate
+		}
+	}
 
+	return bestFrequency
+}
+
+func getFrequencyEveryNthPartition(msg []int, key []byte) float64 {
+	messageLength := len(msg)
+	keyLength := len(key)
+	letterCount := make([]float64, 26)
+	letterFrequency := make([]float64, 26)
+
+	for j := 0; j < keyLength; j++ {
+
+		for k := 0; k < 26; k++ {
+			letterCount[k] = 0.0
+		}
+
+		for i := j; i < messageLength; i += keyLength {
+			letterCount[msg[i]]++
+		}
+
+		keyFrequency := getKeyFrequency(letterCount)
+		key[j] = byte(keyFrequency + 'a')
+		for i := 0; i < 26; i++ {
+			letterFrequency[i] += letterCount[(i+keyFrequency)%26]
+		}
+	}
+
+	sum := sumSlice(letterFrequency)
+	freq := 0.0
+
+	for i := 0; i < 26; i++ {
+		d := letterFrequency[i]/sum - frequency.EnglishLetterFrequency[i]
+		freq += d * d / frequency.EnglishLetterFrequency[i]
+	}
+
+	return freq
 }

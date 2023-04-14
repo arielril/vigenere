@@ -1,82 +1,80 @@
 package kasiski
 
 import (
-	"math"
-	"strings"
+	"fmt"
 
 	"github.com/arielril/vigenere/internal/frequency"
 	"github.com/projectdiscovery/gologger"
 )
 
-func GetPossibleKey(possibleKeyLength int, msg string) string {
-	gologger.Debug().Msg("[possible-key] starting the discovery of the possible key")
-	possibleKey := ""
+func GetPossibleKeys(possibleKeyLength int, msg string) []string {
+	possibleKeys := transpose(msg, possibleKeyLength)
 
-	for i := 0; i < possibleKeyLength; i++ {
-		currentLetterSequence := ""
-		sum := i
-		for sum < len(msg) {
-			currentLetterSequence += string(msg[sum])
-			sum += possibleKeyLength
-		}
-		gologger.Debug().Msgf("[possible-key] current letter sequence: %s\n", currentLetterSequence)
-
-		currentLetterSequenceLen := len(currentLetterSequence)
-		gologger.Debug().Msgf("[possible-key] current letter sequence length: %d\n", currentLetterSequenceLen)
-
-		chiSquareCollection := make([]float64, 26)
-		for j := 0; j < 26; j++ {
-
-			shiftedLetterSequence := ""
-
-			for k := 0; k < currentLetterSequenceLen; k++ {
-				currentLetter := currentLetterSequence[k]
-				currentLetter = (currentLetter - byte(j) - 'a') % 26
-				currentLetter += 'a'
-
-				shiftedLetterSequence += string(currentLetter)
-			}
-
-			totalChiAmount := 0.0
-
-			for l := 0; l < 26; l++ {
-				letter := string(l + 'a')
-
-				observedCount := strings.Count(shiftedLetterSequence, letter)
-				expected := frequency.EnglishLetterFrequency[l] * float64(currentLetterSequenceLen)
-				squaredDifference := math.Pow(float64(observedCount)-expected, 2)
-				currentChi := squaredDifference / expected
-				totalChiAmount += currentChi
-			}
-
-			chiSquareCollection[j] += totalChiAmount
-		}
-
-		min := 0
-
-		for m := 0; m < 26; m++ {
-			if chiSquareCollection[m] < chiSquareCollection[min] {
-				min = m
-			}
-		}
-
-		possibleKey += string(min + 'a')
-	}
-
-	return possibleKey
+	return possibleKeys
 }
 
-// func AttemptToCrackWithKeyLength(msg string, keyLength int) string {
-// 	return ""
-// }
+func transpose(msg string, keyLen int) []string {
+	fmt.Println("transpose key len", keyLen)
+	keys := make([]string, 0)
 
-// // GetNthSubKeyLetters return every nth letter for each keyLength
-// func GetNthSubKeyLetters(startPosition, keyLength int, msg string) string {
-// 	letters := make([]string, 0)
-// 	for i := startPosition - 1; i < len(msg); {
-// 		letters = append(letters, string(msg[i]))
-// 		i += keyLength
-// 	}
+	for i := 0; i < keyLen; i++ {
+		for j := i; j < len(msg)-1; j += keyLen {
+			key := msg[i : i+keyLen]
+			keys = append(keys, key)
+			gologger.Debug().Msgf("[transpose] possible key: %s\n", key)
+		}
+	}
 
-// 	return strings.Join(letters, "")
-// }
+	return keys
+}
+
+func GetPossibleKey(keyLen int, msg string) string {
+	alphabet := "abcdefghijklmnopqrstuvwxyz"
+	key := ""
+
+	for _, col := range partition(msg, keyLen) {
+		scores := make(map[rune]float64, 0)
+
+		for _, letter := range alphabet {
+
+			transposed := make([]rune, 0)
+			for _, c := range col {
+				cIdx := (c - 'a') % 26
+				transposed = append(transposed, rune(alphabet[cIdx]))
+			}
+
+			scores[letter] = frequencyScore(transposed)
+		}
+
+		var k rune
+		maxV := 0.0
+		for r, v := range scores {
+			if v > maxV {
+				maxV = v
+				k = r
+			}
+		}
+		key += string(k)
+
+	}
+
+	return key
+}
+
+func partition(txt string, num int) []string {
+	cols := make([]string, num)
+
+	for i, c := range txt {
+		cols[i%num] += string(c)
+	}
+	return cols
+}
+
+func frequencyScore(tr []rune) float64 {
+	score := 0.0
+	for _, c := range tr {
+		score += frequency.EnglishLetterFrequency[(c-'a')%26]
+	}
+
+	return score
+}
