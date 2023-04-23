@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/arielril/vigenere/internal/vigenere"
@@ -76,7 +76,7 @@ func main() {
 
 func readMessage(opts *Options) {
 	if opts.MessagePath != "" {
-		data, err := ioutil.ReadFile(opts.MessagePath)
+		data, err := os.ReadFile(opts.MessagePath)
 		if err != nil {
 			gologger.Fatal().Msgf("could not read message file: %s\n", err)
 		}
