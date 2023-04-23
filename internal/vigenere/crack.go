@@ -42,15 +42,15 @@ func sumSlice(a []float64) (sum float64) {
 	return
 }
 
-func getKeyFrequency(a []float64) int {
-	sum := sumSlice(a)
+func getKeyFrequency(letterCount []float64) int {
+	sum := sumSlice(letterCount)
 	bestFit := 1e100
 	bestFrequency := 0
 
 	for rotate := 0; rotate < 26; rotate++ {
 		fit := 0.0
 		for i := 0; i < 26; i++ {
-			d := a[(i+rotate)%26]/sum - frequency.EnglishLetterFrequency[i]
+			d := letterCount[(i+rotate)%26]/sum - frequency.EnglishLetterFrequency[i]
 			fit += d * d / frequency.EnglishLetterFrequency[i]
 		}
 
