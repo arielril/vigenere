@@ -1,5 +1,23 @@
 # Vigenere cipher
 
+## Installation
+
+### Go install
+```sh
+go install github.com/arielril/vigenere@latest
+```
+
+### Make
+```sh
+make clean build
+```
+
+## Running
+
+```sh
+./vigenere -h
+```
+
 
 ## resources
 
