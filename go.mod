@@ -1,10 +1,10 @@
 module github.com/arielril/vigenere
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/projectdiscovery/goflags v0.1.74
-	github.com/projectdiscovery/gologger v1.1.54
+	github.com/projectdiscovery/gologger v1.1.55
 )
 
 require (
